@@ -27,6 +27,8 @@ func TestHandlerServesEmbeddedDashboard(t *testing.T) {
 	require.Equal(t, http.StatusOK, response.Code)
 	require.Contains(t, response.Header().Get("Content-Type"), "text/html")
 	require.True(t, strings.Contains(response.Body.String(), "Milvus Check"))
+	require.Contains(t, response.Body.String(), `id="collection-pagination"`)
+	require.Contains(t, response.Body.String(), `<option value="20" selected>20 条</option>`)
 
 	assetRequest := httptest.NewRequest(http.MethodGet, "/assets/app.css", nil)
 	assetResponse := httptest.NewRecorder()

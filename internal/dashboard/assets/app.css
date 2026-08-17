@@ -188,6 +188,15 @@ th:nth-child(9) { width: 18%; }
 .skeleton-short { width: 66%; }
 .empty-state { min-height: 160px; display: grid; place-content: center; text-align: center; gap: 4px; color: var(--muted); }
 .empty-state strong { color: var(--text); }
+.collection-pagination { min-height: 52px; padding: 10px 0; display: flex; align-items: center; justify-content: flex-end; gap: 16px; color: var(--muted); font-size: 13px; }
+.page-info { margin-right: auto; }
+.page-size-label { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.page-size-label select { height: 34px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--text); padding: 0 28px 0 9px; }
+.page-controls, .page-buttons { display: inline-flex; align-items: center; gap: 4px; }
+.page-controls button { min-width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--text); cursor: pointer; }
+.page-controls button:hover:not(:disabled) { border-color: #69736d; background: var(--surface-raised); }
+.page-controls button.active { border-color: #2ba88c; background: #146c5a; color: #fff; }
+.page-controls button:disabled { opacity: .38; cursor: default; }
 
 footer {
   min-height: 52px;
@@ -264,6 +273,9 @@ footer {
   .progress { width: 100%; }
   .skeleton-row { display: block; }
   .skeleton-row td { display: block !important; }
+  .collection-pagination { align-items: flex-start; flex-wrap: wrap; gap: 8px 12px; }
+  .page-info { flex: 1 0 100%; }
+  .page-controls { max-width: 100%; overflow-x: auto; }
 }
 
 @media (max-width: 460px) {

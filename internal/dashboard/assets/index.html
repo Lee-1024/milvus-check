@@ -95,6 +95,23 @@
           <span>当前扫描范围内没有可展示的集合。</span>
         </div>
       </div>
+      <div id="collection-pagination" class="collection-pagination" hidden>
+        <span id="collection-page-info" class="page-info">第 0-0 条，共 0 条</span>
+        <label class="page-size-label">每页
+          <select id="collection-page-size">
+            <option value="20" selected>20 条</option>
+            <option value="50">50 条</option>
+            <option value="100">100 条</option>
+          </select>
+        </label>
+        <div class="page-controls" aria-label="集合列表分页">
+          <button id="collection-first-page" type="button" aria-label="首页" title="首页">«</button>
+          <button id="collection-prev-page" type="button" aria-label="上一页" title="上一页">‹</button>
+          <span id="collection-page-buttons" class="page-buttons"></span>
+          <button id="collection-next-page" type="button" aria-label="下一页" title="下一页">›</button>
+          <button id="collection-last-page" type="button" aria-label="末页" title="末页">»</button>
+        </div>
+      </div>
     </section>
 
     <nav id="metric-nav" class="metric-nav" aria-label="指标分类">

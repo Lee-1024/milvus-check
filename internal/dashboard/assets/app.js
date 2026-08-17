@@ -12,13 +12,24 @@
     staleBanner: document.getElementById("stale-banner"),
     body: document.getElementById("collection-body"),
     empty: document.getElementById("empty-state"),
-    resultCount: document.getElementById("result-count")
+    resultCount: document.getElementById("result-count"),
+    pagination: document.getElementById("collection-pagination"),
+    pageInfo: document.getElementById("collection-page-info"),
+    pageSize: document.getElementById("collection-page-size"),
+    pageButtons: document.getElementById("collection-page-buttons"),
+    firstPage: document.getElementById("collection-first-page"),
+    prevPage: document.getElementById("collection-prev-page"),
+    nextPage: document.getElementById("collection-next-page"),
+    lastPage: document.getElementById("collection-last-page")
   };
 
   let intervalSeconds = 30;
   let remainingSeconds = intervalSeconds;
   let lastStatus = null;
   let refreshing = false;
+  let allCollections = [];
+  let currentPage = 1;
+  let pageSize = 20;
 
   const metricIDs = ["database-count", "collection-count", "loaded-count", "loading-count", "not-loaded-count", "error-count", "search-qps", "query-qps", "failed-ps"];
 
@@ -46,8 +57,6 @@
 
   function renderRows(collections) {
     elements.body.replaceChildren();
-    elements.empty.hidden = collections.length !== 0;
-    elements.resultCount.textContent = `${collections.length} 条`;
 
     collections.forEach((item) => {
       const row = document.createElement("tr");
@@ -93,6 +102,41 @@
       row.appendChild(createCell("说明", notes.join("；") || "--", item.error ? "note note-error" : "note"));
       elements.body.appendChild(row);
     });
+  }
+
+  function renderCollectionPage() {
+    const total = allCollections.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    currentPage = Math.max(1, Math.min(currentPage, totalPages));
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, total);
+
+    elements.resultCount.textContent = `${total} 条`;
+    elements.empty.hidden = total !== 0;
+    elements.pagination.hidden = total === 0;
+    renderRows(allCollections.slice(startIndex, endIndex));
+    if (total === 0) return;
+
+    elements.pageInfo.textContent = `第 ${startIndex + 1}-${endIndex} 条，共 ${total} 条`;
+    elements.firstPage.disabled = currentPage === 1;
+    elements.prevPage.disabled = currentPage === 1;
+    elements.nextPage.disabled = currentPage === totalPages;
+    elements.lastPage.disabled = currentPage === totalPages;
+    elements.pageButtons.replaceChildren();
+
+    let firstVisible = Math.max(1, currentPage - 2);
+    let lastVisible = Math.min(totalPages, firstVisible + 4);
+    firstVisible = Math.max(1, lastVisible - 4);
+    for (let page = firstVisible; page <= lastVisible; page += 1) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = String(page);
+      button.classList.toggle("active", page === currentPage);
+      button.setAttribute("aria-label", `第 ${page} 页`);
+      button.setAttribute("aria-current", page === currentPage ? "page" : "false");
+      button.addEventListener("click", () => { currentPage = page; renderCollectionPage(); });
+      elements.pageButtons.appendChild(button);
+    }
   }
 
   function renderSummary(status) {
@@ -141,7 +185,8 @@
     elements.errorBanner.textContent = status.last_error || "";
     elements.staleBanner.hidden = Number.isNaN(checkedAt.getTime()) || Date.now() - checkedAt.getTime() <= intervalSeconds * 2000;
     renderSummary(status);
-    renderRows(status.collections || []);
+    allCollections = status.collections || [];
+    renderCollectionPage();
   }
 
   async function refresh() {
@@ -157,8 +202,8 @@
       elements.errorBanner.textContent = `状态接口请求失败：${error.message}`;
       if (!lastStatus) {
         metricIDs.forEach((id) => setText(id, "--"));
-        elements.body.replaceChildren();
-        elements.empty.hidden = false;
+        allCollections = [];
+        renderCollectionPage();
       }
     } finally {
       refreshing = false;
@@ -167,6 +212,18 @@
   }
 
   elements.refreshButton.addEventListener("click", refresh);
+  elements.pageSize.addEventListener("change", () => {
+    pageSize = Number(elements.pageSize.value) || 20;
+    currentPage = 1;
+    renderCollectionPage();
+  });
+  elements.firstPage.addEventListener("click", () => { currentPage = 1; renderCollectionPage(); });
+  elements.prevPage.addEventListener("click", () => { currentPage -= 1; renderCollectionPage(); });
+  elements.nextPage.addEventListener("click", () => { currentPage += 1; renderCollectionPage(); });
+  elements.lastPage.addEventListener("click", () => {
+    currentPage = Math.max(1, Math.ceil(allCollections.length / pageSize));
+    renderCollectionPage();
+  });
   setInterval(() => {
     remainingSeconds -= 1;
     if (remainingSeconds <= 0) {
