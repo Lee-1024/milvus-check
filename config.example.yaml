@@ -1,0 +1,45 @@
+milvus:
+  address: "localhost:19530"
+  # 指定数据库名称；设置为 "*" 时检查全部数据库。
+  database: "default"
+  collection: ""
+  username: ""
+  password: ""
+  token: ""
+  timeout: 10s
+
+prometheus:
+  enabled: true
+  address: "http://localhost:9090"
+  timeout: 10s
+  # Prometheus 抓取 Milvus 时使用的 job 标签。
+  job: "milvus"
+
+metrics:
+  # Web 指标趋势默认时间范围，只支持 5m、1h、6h、24h。
+  default_range: "1h"
+  query_timeout: 15s
+  # 可按指标 ID 覆盖阈值，例如 request_success_rate。
+  thresholds: {}
+
+alert:
+  # 只对持续处于 loading 的集合发送飞书告警。
+  enabled: false
+  feishu_webhook: ""
+  loading_timeout: 30m
+  repeat_interval: 1h
+  request_timeout: 10s
+
+check:
+  load_threshold: 100
+  output: "table"
+
+server:
+  listen: ":2112"
+  interval: 30s
+  shutdown_timeout: 10s
+
+log:
+  level: "info"
+  format: "json"
+  add_source: true

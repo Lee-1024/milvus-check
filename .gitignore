@@ -1,0 +1,9 @@
+# 本地配置可能包含 Milvus 凭据，不应提交到仓库。
+config.yaml
+config.preview.yaml
+
+# 构建产物
+/milvus-check
+/milvus-check.exe
+/milvus-check.exe~
+/dist/

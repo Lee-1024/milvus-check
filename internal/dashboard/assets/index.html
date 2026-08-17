@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Milvus Check</title>
+  <link rel="stylesheet" href="/assets/vendor/uPlot.min.css">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-block">
+      <div class="brand-mark" aria-hidden="true">M</div>
+      <div>
+        <h1>Milvus Check</h1>
+        <p>集合加载监控</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div id="range-control" class="range-control" aria-label="指标时间范围">
+        <button type="button" data-range="5m">5 分钟</button>
+        <button type="button" data-range="1h" class="active">1 小时</button>
+        <button type="button" data-range="6h">6 小时</button>
+        <button type="button" data-range="24h">24 小时</button>
+      </div>
+      <div class="refresh-meta" aria-live="polite">
+        <span id="checked-at">等待首次检查</span>
+        <span id="countdown">--</span>
+      </div>
+      <button id="refresh-button" class="icon-button" type="button" aria-label="立即刷新" title="立即刷新">
+        <span aria-hidden="true">↻</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="status-band" aria-label="当前状态">
+      <div>
+        <span class="eyebrow">运行状态</span>
+        <div class="overall-state">
+          <span id="overall-dot" class="state-dot state-unknown" aria-hidden="true"></span>
+          <strong id="overall-state">正在连接</strong>
+        </div>
+      </div>
+      <p id="status-detail">等待后台完成第一次 Milvus 检查。</p>
+    </section>
+
+    <section class="summary-grid" aria-label="指标摘要">
+      <article class="metric"><span>数据库</span><strong id="database-count">--</strong></article>
+      <article class="metric"><span>集合总数</span><strong id="collection-count">--</strong></article>
+      <article class="metric metric-good"><span>已加载</span><strong id="loaded-count">--</strong></article>
+      <article class="metric metric-warn"><span>加载中</span><strong id="loading-count">--</strong></article>
+      <article class="metric metric-bad"><span>未加载</span><strong id="not-loaded-count">--</strong></article>
+      <article class="metric"><span>检查异常</span><strong id="error-count">--</strong></article>
+      <article class="metric"><span>搜索 QPS</span><strong id="search-qps">--</strong></article>
+      <article class="metric"><span>查询 QPS</span><strong id="query-qps">--</strong></article>
+      <article class="metric"><span>失败请求/秒</span><strong id="failed-ps">--</strong></article>
+    </section>
+
+    <section id="error-banner" class="message-banner message-error" role="alert" hidden></section>
+    <section id="stale-banner" class="message-banner message-warn" role="status" hidden>数据已超过两个刷新周期，可能不是最新状态。</section>
+
+    <section class="collection-section" aria-labelledby="collection-title">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Collection inventory</span>
+          <h2 id="collection-title">集合加载情况</h2>
+        </div>
+        <span id="result-count" class="result-count">0 条</span>
+      </div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>数据库 / 集合</th>
+              <th>加载状态</th>
+              <th>进度</th>
+              <th class="number">实体数</th>
+              <th class="number">分区</th>
+              <th>索引</th>
+              <th class="number">已加载实体</th>
+              <th class="number">Segment</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody id="collection-body">
+            <tr class="skeleton-row"><td colspan="9"><span class="skeleton"></span></td></tr>
+            <tr class="skeleton-row"><td colspan="9"><span class="skeleton skeleton-short"></span></td></tr>
+          </tbody>
+        </table>
+        <div id="empty-state" class="empty-state" hidden>
+          <strong>没有发现集合</strong>
+          <span>当前扫描范围内没有可展示的集合。</span>
+        </div>
+      </div>
+    </section>
+
+    <nav id="metric-nav" class="metric-nav" aria-label="指标分类">
+      <button type="button" data-category="overview" class="active">总览</button>
+      <button type="button" data-category="request">请求与延迟</button>
+      <button type="button" data-category="querynode">查询节点</button>
+      <button type="button" data-category="storage">写入与存储</button>
+      <button type="button" data-category="load_index">加载与索引</button>
+      <button type="button" data-category="components">组件状态</button>
+      <button type="button" data-category="dictionary">指标字典</button>
+    </nav>
+
+    <section class="prometheus-section" aria-labelledby="prometheus-title">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Prometheus telemetry</span>
+          <h2 id="prometheus-title">Milvus 运行指标</h2>
+        </div>
+        <div id="build-info" class="build-info">正在发现 Milvus 指标</div>
+      </div>
+      <div id="metrics-message" class="message-banner message-warn" hidden></div>
+      <div id="metric-grid" class="metric-chart-grid" aria-live="polite"></div>
+      <div id="metric-dictionary" class="dictionary" hidden>
+        <label class="dictionary-search">搜索指标<input id="dictionary-search" type="search" placeholder="中文名称、原始指标或组件"></label>
+        <div class="table-shell"><table><thead><tr><th>中文名称</th><th>分类</th><th>来源</th><th>单位</th><th>兼容状态</th></tr></thead><tbody id="dictionary-body"></tbody></table></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="metric-dialog" class="metric-dialog">
+    <form method="dialog"><button class="dialog-close" aria-label="关闭" title="关闭">×</button></form>
+    <span id="dialog-category" class="eyebrow"></span>
+    <h2 id="dialog-title"></h2>
+    <p id="dialog-description"></p>
+    <dl>
+      <div><dt>如何理解</dt><dd id="dialog-interpretation"></dd></div>
+      <div><dt>来源组件</dt><dd id="dialog-source"></dd></div>
+      <div><dt>兼容状态</dt><dd id="dialog-state"></dd></div>
+      <div><dt>实际 PromQL</dt><dd><code id="dialog-promql"></code></dd></div>
+    </dl>
+  </dialog>
+
+  <footer>
+    <span>只读视图</span>
+    <span>指标由 Prometheus 只读查询</span>
+  </footer>
+  <script src="/assets/vendor/uPlot.iife.min.js" defer></script>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>
