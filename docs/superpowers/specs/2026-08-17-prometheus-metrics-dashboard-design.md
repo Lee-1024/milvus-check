@@ -293,6 +293,10 @@ Hovering a time-series chart displays an in-chart tooltip with the selected time
 
 Numeric formatting preserves small non-zero rates consistently across cards, axes, and tooltips. Values at least `10` use one decimal, values from `1` to `10` use two decimals, values from `0.01` to `1` use three decimals, and values from `0.0001` to `0.01` use five decimals. Smaller non-zero values use scientific notation. Only an exact numeric zero is displayed as `0`.
 
+Percentage ratios with a defined upper bound, including request and load success rates, are clamped to `100` in PromQL to avoid scrape-window artifacts above 100%. Percentage chart axes choose precision from the visible tick span: spans below `1` use two decimals, below `0.1` use three decimals, and below `0.01` use four decimals. Tooltips retain adaptive precision so a value such as `99.973%` remains visible even when the card headline rounds to `100%`.
+
+Byte charts use one shared binary unit across all visible Y-axis ticks. Axis precision follows the scaled visible span: spans at least `10` units use one decimal, spans from `1` to `10` use two decimals, and spans below `1` use three decimals. Byte tooltips use up to three decimals while card headlines remain compact. Byte axes reserve enough width for the value and unit so distinct underlying values do not appear identical or get clipped.
+
 Desktop uses a two-column chart grid. Tablet and mobile use one column. Charts have stable heights and never resize the page during loading. Missing data uses a framed empty state instead of an empty canvas.
 
 ## Chart Runtime

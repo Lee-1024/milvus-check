@@ -240,6 +240,7 @@
   const stateNames = { available: "有数据", zero: "当前为零", no_data: "时间范围内无数据", unsupported: "当前版本不支持", error: "查询失败", disabled: "未启用" };
   const catalogStateNames = { available: "当前版本支持", unsupported: "当前版本不支持", error: "发现失败", disabled: "未启用" };
   const palette = ["#4fc3a1", "#65c7d0", "#e5ad45", "#f16f65", "#9ea7ff", "#d28bdc"];
+  const byteUnits = ["B", "KiB", "MiB", "GiB", "TiB"];
   const metricUI = {
     nav: document.getElementById("metric-nav"), range: document.getElementById("range-control"), grid: document.getElementById("metric-grid"),
     dictionary: document.getElementById("metric-dictionary"), dictionaryBody: document.getElementById("dictionary-body"), search: document.getElementById("dictionary-search"),
@@ -263,19 +264,29 @@
     element.appendChild(suffix);
   }
 
-  function formatMetricValue(value, unit) {
+  function formatMetricValue(value, unit, detailed = false) {
+    if (unit === "%") {
+      return { value: detailed ? formatNumber(value, 3) : formatNumber(value, 1), unit };
+    }
     if (unit !== "bytes") {
       return { value: formatAdaptiveNumber(value), unit: unit || "" };
     }
-    const units = ["B", "KiB", "MiB", "GiB", "TiB"];
-    let scaled = Math.abs(value);
+    return formatByteValue(value, detailed);
+  }
+
+  function byteUnitIndex(value) {
+    let scaled = Math.abs(Number(value));
     let index = 0;
-    while (scaled >= 1024 && index < units.length - 1) {
+    while (scaled >= 1024 && index < byteUnits.length - 1) {
       scaled /= 1024;
       index += 1;
     }
-    if (value < 0) scaled = -scaled;
-    return { value: formatAdaptiveNumber(scaled), unit: units[index] };
+    return index;
+  }
+
+  function formatByteValue(value, detailed = false, unitIndex = byteUnitIndex(value)) {
+    const scaled = Number(value) / (1024 ** unitIndex);
+    return { value: detailed ? formatNumber(scaled, 3) : formatAdaptiveNumber(scaled), unit: byteUnits[unitIndex] };
   }
 
   function formatAdaptiveNumber(value) {
@@ -299,6 +310,27 @@
       return new Intl.NumberFormat("zh-CN", { notation: "compact", maximumFractionDigits: 1 }).format(value);
     }
     return formatAdaptiveNumber(value);
+  }
+
+  function formatPercentAxisValues(values) {
+    const finiteValues = values.filter((value) => Number.isFinite(value));
+    const span = finiteValues.length > 1 ? Math.max(...finiteValues) - Math.min(...finiteValues) : 0;
+    let digits = 1;
+    if (span < 1) digits = 2;
+    if (span < 0.1) digits = 3;
+    if (span < 0.01) digits = 4;
+    return values.map((value) => formatNumber(value, digits));
+  }
+
+  function formatByteAxisValues(values) {
+    const finiteValues = values.filter((value) => Number.isFinite(value));
+    const maximum = finiteValues.length ? Math.max(...finiteValues.map((value) => Math.abs(value))) : 0;
+    const unitIndex = byteUnitIndex(maximum);
+    const divisor = 1024 ** unitIndex;
+    const scaledValues = finiteValues.map((value) => value / divisor);
+    const span = scaledValues.length > 1 ? Math.max(...scaledValues) - Math.min(...scaledValues) : 0;
+    const digits = span >= 10 ? 1 : span >= 1 ? 2 : 3;
+    return values.map((value) => `${formatNumber(value / divisor, digits)} ${byteUnits[unitIndex]}`);
   }
 
   function seriesName(labels, index) {
@@ -359,7 +391,7 @@
         const swatch = document.createElement("i"); swatch.style.backgroundColor = palette[seriesIndex];
         const name = document.createElement("span"); name.textContent = seriesName(item.labels, seriesIndex); name.title = name.textContent;
         label.append(swatch, name);
-        const formatted = formatMetricValue(value, metric.unit);
+        const formatted = formatMetricValue(value, metric.unit, true);
         const output = document.createElement("b"); output.textContent = `${formatted.value} ${formatted.unit}`.trim();
         row.append(label, output); tooltip.appendChild(row);
       });
@@ -379,11 +411,16 @@
       scales: { x: { time: true } },
       axes: [
         { stroke: "#a9b2ad", grid: { stroke: "#303532" } },
-        { size: 82, stroke: "#a9b2ad", grid: { stroke: "#303532" }, values: (_plot, values) => values.map((value) => formatAxisValue(value, metric.unit)) }
+        {
+          size: metric.unit === "bytes" ? 108 : 82,
+          stroke: "#a9b2ad",
+          grid: { stroke: "#303532" },
+          values: (_plot, values) => metric.unit === "%" ? formatPercentAxisValues(values) : metric.unit === "bytes" ? formatByteAxisValues(values) : values.map((value) => formatAxisValue(value, metric.unit))
+        }
       ],
       series: [{ label: "时间" }, ...series.map((item, index) => ({
         label: seriesName(item.labels, index), stroke: palette[index], width: 2, points: { show: false },
-        value: (_plot, value) => value === null ? "--" : `${formatMetricValue(value, metric.unit).value} ${formatMetricValue(value, metric.unit).unit}`
+        value: (_plot, value) => value === null ? "--" : `${formatMetricValue(value, metric.unit, true).value} ${formatMetricValue(value, metric.unit, true).unit}`
       }))]
     };
     charts.set(metric.id, new window.uPlot(options, chartData(series), plotHost));

@@ -32,3 +32,12 @@ func TestRenderPromQLUsesFixedJobAndRateWindow(t *testing.T) {
 	query := RenderPromQL(`sum(rate(test_total$selector[$rate]))`, "milvus-prod", "5m")
 	require.Equal(t, `sum(rate(test_total{job="milvus-prod"}[5m]))`, query)
 }
+
+func TestSuccessRateQueriesAreClampedToOneHundred(t *testing.T) {
+	for _, definition := range Definitions() {
+		if definition.ID == "request_success_rate" || definition.ID == "load_success_rate" {
+			require.Contains(t, definition.Queries[0].PromQL, "clamp_max(", definition.ID)
+			require.Contains(t, definition.Queries[0].PromQL, ", 100)", definition.ID)
+		}
+	}
+}
