@@ -287,6 +287,10 @@ The detail drawer contains Chinese meaning, interpretation, source component, or
 
 The metric dictionary provides searchable rows by Chinese title, original metric, component, and category.
 
+The dictionary describes catalog compatibility rather than query results. Its states use `当前版本支持`, `当前版本不支持`, and `未启用`. Metric panels continue to use `有数据`, `当前为零`, and `时间范围内无数据` for actual query results.
+
+Hovering a time-series chart displays an in-chart tooltip with the selected timestamp and values for all visible series, capped at six. Values use the metric unit formatter, including `MiB` and `GiB` for byte metrics. The tooltip flips horizontally near the right edge and remains inside the chart panel. It hides when the pointer leaves the chart and is not required on touch-only devices.
+
 Desktop uses a two-column chart grid. Tablet and mobile use one column. Charts have stable heights and never resize the page during loading. Missing data uses a framed empty state instead of an empty canvas.
 
 ## Chart Runtime

@@ -238,6 +238,7 @@
     storage: "写入与存储", load_index: "加载与索引", components: "组件状态"
   };
   const stateNames = { available: "有数据", zero: "当前为零", no_data: "时间范围内无数据", unsupported: "当前版本不支持", error: "查询失败", disabled: "未启用" };
+  const catalogStateNames = { available: "当前版本支持", unsupported: "当前版本不支持", error: "发现失败", disabled: "未启用" };
   const palette = ["#4fc3a1", "#65c7d0", "#e5ad45", "#f16f65", "#9ea7ff", "#d28bdc"];
   const metricUI = {
     nav: document.getElementById("metric-nav"), range: document.getElementById("range-control"), grid: document.getElementById("metric-grid"),
@@ -316,6 +317,9 @@
     const width = Math.max(280, host.clientWidth || 520);
     const plotHost = document.createElement("div");
     plotHost.className = "plot-host";
+    const tooltip = document.createElement("div");
+    tooltip.className = "chart-tooltip";
+    tooltip.hidden = true;
     const legend = document.createElement("div");
     legend.className = "chart-legend";
     series.forEach((item, index) => {
@@ -326,10 +330,41 @@
       entry.append(swatch, label); legend.appendChild(entry);
     });
     host.append(plotHost, legend);
+    function updateTooltip(plot) {
+      const index = plot.cursor.idx;
+      if (index === null || index === undefined || plot.data[0][index] === undefined) {
+        tooltip.hidden = true;
+        return;
+      }
+      tooltip.replaceChildren();
+      const timestamp = document.createElement("strong");
+      timestamp.textContent = new Date(plot.data[0][index] * 1000).toLocaleString("zh-CN");
+      tooltip.appendChild(timestamp);
+      series.forEach((item, seriesIndex) => {
+        const value = plot.data[seriesIndex + 1][index];
+        if (value === null || value === undefined) return;
+        const row = document.createElement("div"); row.className = "chart-tooltip-row";
+        const label = document.createElement("span"); label.className = "chart-tooltip-label";
+        const swatch = document.createElement("i"); swatch.style.backgroundColor = palette[seriesIndex];
+        const name = document.createElement("span"); name.textContent = seriesName(item.labels, seriesIndex); name.title = name.textContent;
+        label.append(swatch, name);
+        const formatted = formatMetricValue(value, metric.unit);
+        const output = document.createElement("b"); output.textContent = `${formatted.value} ${formatted.unit}`.trim();
+        row.append(label, output); tooltip.appendChild(row);
+      });
+      tooltip.hidden = false;
+      const gap = 14;
+      let left = (plot.cursor.left || 0) + gap;
+      if (left + tooltip.offsetWidth > plot.width - 8) left = (plot.cursor.left || 0) - tooltip.offsetWidth - gap;
+      const top = Math.max(8, Math.min((plot.cursor.top || 0) + gap, plot.height - tooltip.offsetHeight - 8));
+      tooltip.style.left = `${Math.max(8, left)}px`;
+      tooltip.style.top = `${top}px`;
+    }
     const options = {
       width, height: 235,
       legend: { show: false },
       cursor: { drag: { x: true, y: false } },
+      hooks: { setCursor: [updateTooltip] },
       scales: { x: { time: true } },
       axes: [
         { stroke: "#a9b2ad", grid: { stroke: "#303532" } },
@@ -341,15 +376,17 @@
       }))]
     };
     charts.set(metric.id, new window.uPlot(options, chartData(series), plotHost));
+    plotHost.appendChild(tooltip);
+    plotHost.addEventListener("mouseleave", () => { tooltip.hidden = true; });
   }
 
-  function showMetricDetail(metric) {
+  function showMetricDetail(metric, catalogOnly = false) {
     document.getElementById("dialog-category").textContent = categoryNames[metric.category] || metric.category;
     document.getElementById("dialog-title").textContent = metric.title;
     document.getElementById("dialog-description").textContent = metric.description;
     document.getElementById("dialog-interpretation").textContent = metric.interpretation;
     document.getElementById("dialog-source").textContent = metric.source;
-    document.getElementById("dialog-state").textContent = stateNames[metric.state] || metric.state;
+    document.getElementById("dialog-state").textContent = (catalogOnly ? catalogStateNames[metric.state] : stateNames[metric.state]) || metric.state;
     document.getElementById("dialog-promql").textContent = metric.promql || "当前版本没有可用查询";
     metricUI.dialog.showModal();
   }
@@ -399,8 +436,8 @@
     metricUI.dictionaryBody.replaceChildren();
     metricCatalog.filter((item) => [item.title, item.source, item.description, ...(item.missing_metrics || [])].join(" ").toLowerCase().includes(keyword)).forEach((item) => {
       const row = document.createElement("tr");
-      [item.title, categoryNames[item.category], item.source, item.unit, stateNames[item.state]].forEach((value) => row.appendChild(createCell("", value || "--")));
-      row.addEventListener("click", () => showMetricDetail(item));
+      [item.title, categoryNames[item.category], item.source, item.unit, catalogStateNames[item.state]].forEach((value) => row.appendChild(createCell("", value || "--")));
+      row.addEventListener("click", () => showMetricDetail(item, true));
       metricUI.dictionaryBody.appendChild(row);
     });
   }

@@ -226,7 +226,14 @@ footer {
 .info-button, .dialog-close { border: 0; background: transparent; color: var(--muted); font-size: 20px; cursor: pointer; width: 34px; height: 34px; }
 .chart-host { min-width: 0; height: 280px; display: block; color: var(--muted); font-size: 13px; overflow: hidden; }
 .chart-host .uplot { max-width: 100%; }
-.plot-host { min-width: 0; height: 235px; overflow: hidden; }
+.plot-host { position: relative; min-width: 0; height: 235px; overflow: hidden; }
+.chart-tooltip { position: absolute; z-index: 4; width: min(280px, calc(100% - 16px)); padding: 9px 10px; border: 1px solid #56605a; border-radius: 4px; background: rgba(18, 21, 20, .96); color: var(--text); box-shadow: 0 6px 18px rgba(0, 0, 0, .28); pointer-events: none; }
+.chart-tooltip strong { display: block; margin-bottom: 6px; color: var(--muted); font-size: 11px; font-weight: 600; }
+.chart-tooltip-row { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; }
+.chart-tooltip-label { min-width: 0; display: inline-flex; align-items: center; gap: 6px; }
+.chart-tooltip-label i { width: 9px; height: 3px; flex: 0 0 auto; }
+.chart-tooltip-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-tooltip-row b { flex: 0 0 auto; font-weight: 600; }
 .chart-legend { height: 40px; padding-top: 8px; display: flex; align-items: center; gap: 8px 14px; overflow: hidden; }
 .chart-legend-item { min-width: 0; max-width: 220px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .chart-legend-item i { width: 10px; height: 3px; flex: 0 0 auto; }
