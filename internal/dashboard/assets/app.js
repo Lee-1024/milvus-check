@@ -154,9 +154,9 @@
     setText("loading-count", formatNumber(loading));
     setText("not-loaded-count", formatNumber(notLoaded));
     setText("error-count", formatNumber(errors));
-    setText("search-qps", formatNumber(metrics.search_qps, 2));
-    setText("query-qps", formatNumber(metrics.query_qps, 2));
-    setText("failed-ps", formatNumber(metrics.failed_request_ps, 3));
+    setText("search-qps", metrics.search_qps === undefined || metrics.search_qps === null ? "--" : formatAdaptiveNumber(metrics.search_qps));
+    setText("query-qps", metrics.query_qps === undefined || metrics.query_qps === null ? "--" : formatAdaptiveNumber(metrics.query_qps));
+    setText("failed-ps", metrics.failed_request_ps === undefined || metrics.failed_request_ps === null ? "--" : formatAdaptiveNumber(metrics.failed_request_ps));
   }
 
   function renderStatus(status) {
@@ -265,8 +265,7 @@
 
   function formatMetricValue(value, unit) {
     if (unit !== "bytes") {
-      const digits = Math.abs(value) < 10 ? 2 : 1;
-      return { value: formatNumber(value, digits), unit: unit || "" };
+      return { value: formatAdaptiveNumber(value), unit: unit || "" };
     }
     const units = ["B", "KiB", "MiB", "GiB", "TiB"];
     let scaled = Math.abs(value);
@@ -276,7 +275,19 @@
       index += 1;
     }
     if (value < 0) scaled = -scaled;
-    return { value: formatNumber(scaled, scaled < 10 ? 2 : 1), unit: units[index] };
+    return { value: formatAdaptiveNumber(scaled), unit: units[index] };
+  }
+
+  function formatAdaptiveNumber(value) {
+    value = Number(value);
+    if (!Number.isFinite(value)) return "--";
+    if (value === 0) return "0";
+    const absolute = Math.abs(value);
+    if (absolute < 0.0001) return value.toExponential(2);
+    if (absolute < 0.01) return formatNumber(value, 5);
+    if (absolute < 1) return formatNumber(value, 3);
+    if (absolute < 10) return formatNumber(value, 2);
+    return formatNumber(value, 1);
   }
 
   function formatAxisValue(value, unit) {
@@ -287,7 +298,7 @@
     if (Math.abs(value) >= 10000) {
       return new Intl.NumberFormat("zh-CN", { notation: "compact", maximumFractionDigits: 1 }).format(value);
     }
-    return formatNumber(value, Math.abs(value) < 10 ? 1 : 0);
+    return formatAdaptiveNumber(value);
   }
 
   function seriesName(labels, index) {

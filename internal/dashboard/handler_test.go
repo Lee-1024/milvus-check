@@ -47,6 +47,8 @@ func TestHandlerServesEmbeddedDashboard(t *testing.T) {
 	require.Contains(t, scriptResponse.Body.String(), "legend: { show: false }")
 	require.Contains(t, scriptResponse.Body.String(), `available: "当前版本支持"`)
 	require.Contains(t, scriptResponse.Body.String(), `className = "chart-tooltip"`)
+	require.Contains(t, scriptResponse.Body.String(), `if (value === 0) return "0"`)
+	require.Contains(t, scriptResponse.Body.String(), `value.toExponential(2)`)
 }
 
 type stubMetricsService struct{}

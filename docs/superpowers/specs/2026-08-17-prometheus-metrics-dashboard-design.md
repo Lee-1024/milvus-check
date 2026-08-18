@@ -291,6 +291,8 @@ The dictionary describes catalog compatibility rather than query results. Its st
 
 Hovering a time-series chart displays an in-chart tooltip with the selected timestamp and values for all visible series, capped at six. Values use the metric unit formatter, including `MiB` and `GiB` for byte metrics. The tooltip flips horizontally near the right edge and remains inside the chart panel. It hides when the pointer leaves the chart and is not required on touch-only devices.
 
+Numeric formatting preserves small non-zero rates consistently across cards, axes, and tooltips. Values at least `10` use one decimal, values from `1` to `10` use two decimals, values from `0.01` to `1` use three decimals, and values from `0.0001` to `0.01` use five decimals. Smaller non-zero values use scientific notation. Only an exact numeric zero is displayed as `0`.
+
 Desktop uses a two-column chart grid. Tablet and mobile use one column. Charts have stable heights and never resize the page during loading. Missing data uses a framed empty state instead of an empty canvas.
 
 ## Chart Runtime
