@@ -151,3 +151,8 @@ The page is a dense, quiet operations dashboard.
 - No collection load/release actions are exposed.
 - No historical chart storage is added; Prometheus and Grafana remain responsible for time-series history.
 - No frontend framework, package manager, or external font/icon CDN is introduced.
+# Collection state filters
+
+The `loading` and `not_load` summary cards act as toggle filters for the collection table. Each can be enabled independently; when both are enabled, the table shows collections matching either state. Clicking an enabled card removes that filter.
+
+Filtering affects only the rendered collection rows and their pagination. Summary counts remain calculated from the complete Milvus snapshot. The active filter state survives background refreshes, and an empty filtered result shows a dedicated empty-state message.

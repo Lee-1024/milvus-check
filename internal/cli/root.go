@@ -60,7 +60,7 @@ func runAlertTest(ctx context.Context, cfg config.Config, notifier alert.Notifie
 	if !cfg.Alert.Enabled {
 		return errors.New("发送测试告警前必须设置 alert.enabled: true")
 	}
-	return notifier.Notify(ctx, alert.Notification{Test: true, MilvusAddress: cfg.Milvus.Address, CheckedAt: time.Now()})
+	return notifier.NotifyBatch(ctx, []alert.Notification{{Test: true, MilvusAddress: cfg.Milvus.Address, CheckedAt: time.Now()}})
 }
 
 func newCheckCommand(ctx context.Context, configPath *string) *cobra.Command {

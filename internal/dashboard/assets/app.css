@@ -136,6 +136,10 @@ main { width: min(1540px, 100%); margin: 0 auto; padding: 22px clamp(16px, 3vw, 
 .metric-good strong { color: var(--green); }
 .metric-warn strong { color: var(--amber); }
 .metric-bad strong { color: var(--red); }
+.filter-card { cursor: pointer; transition: border-color 180ms ease, background-color 180ms ease; }
+.filter-card:hover { border-color: #69736d; background: var(--surface-raised); }
+.filter-card.is-active { border-color: #2ba88c; box-shadow: inset 0 -3px 0 #2ba88c; }
+.filter-card:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
 .message-banner {
   margin: 10px 0;

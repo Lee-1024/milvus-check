@@ -10,7 +10,7 @@ import (
 )
 
 type Notifier interface {
-	Notify(context.Context, Notification) error
+	NotifyBatch(context.Context, []Notification) error
 }
 
 type Notification struct {
@@ -55,6 +55,11 @@ func (t *Tracker) Evaluate(ctx context.Context, report domain.CheckReport) {
 
 	now := t.now()
 	active := make(map[string]struct{})
+	type pendingAlert struct {
+		key          string
+		notification Notification
+	}
+	var pending []pendingAlert
 	for _, collection := range report.Collections {
 		key := collection.Database + "\x00" + collection.Collection
 		if collection.LoadState != domain.LoadStateLoading {
@@ -80,13 +85,7 @@ func (t *Tracker) Evaluate(ctx context.Context, report domain.CheckReport) {
 			MilvusAddress: t.milvusAddress, Database: collection.Database, Collection: collection.Collection,
 			Progress: collection.LoadProgress, LoadingSince: state.startedAt, CheckedAt: now, Duration: duration, Repeated: repeated,
 		}
-		if err := t.notifier.Notify(ctx, notification); err != nil {
-			t.logger.Error("飞书集合加载告警发送失败", "database", collection.Database, "collection", collection.Collection, "duration", duration, "error", err)
-			continue
-		}
-		state.lastSentAt = now
-		t.states[key] = state
-		t.logger.Warn("飞书集合加载告警发送成功", "database", collection.Database, "collection", collection.Collection, "duration", duration, "repeated", repeated)
+		pending = append(pending, pendingAlert{key: key, notification: notification})
 	}
 
 	for key := range t.states {
@@ -94,4 +93,21 @@ func (t *Tracker) Evaluate(ctx context.Context, report domain.CheckReport) {
 			delete(t.states, key)
 		}
 	}
+	if len(pending) == 0 {
+		return
+	}
+	notifications := make([]Notification, 0, len(pending))
+	for _, item := range pending {
+		notifications = append(notifications, item.notification)
+	}
+	if err := t.notifier.NotifyBatch(ctx, notifications); err != nil {
+		t.logger.Error("飞书集合加载批量告警发送失败", "collection_count", len(notifications), "error", err)
+		return
+	}
+	for _, item := range pending {
+		state := t.states[item.key]
+		state.lastSentAt = now
+		t.states[item.key] = state
+	}
+	t.logger.Warn("飞书集合加载批量告警发送成功", "collection_count", len(notifications))
 }

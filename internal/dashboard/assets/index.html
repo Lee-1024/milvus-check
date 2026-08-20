@@ -50,8 +50,8 @@
       <article class="metric"><span>数据库</span><strong id="database-count">--</strong></article>
       <article class="metric"><span>集合总数</span><strong id="collection-count">--</strong></article>
       <article class="metric metric-good"><span>已加载</span><strong id="loaded-count">--</strong></article>
-      <article class="metric metric-warn"><span>加载中</span><strong id="loading-count">--</strong></article>
-      <article class="metric metric-bad"><span>未加载</span><strong id="not-loaded-count">--</strong></article>
+      <article id="loading-filter" class="metric metric-warn filter-card" data-filter-state="loading" role="button" tabindex="0" aria-pressed="false" title="筛选加载中的集合"><span>加载中</span><strong id="loading-count">--</strong></article>
+      <article id="not-loaded-filter" class="metric metric-bad filter-card" data-filter-state="not_load" role="button" tabindex="0" aria-pressed="false" title="筛选未加载的集合"><span>未加载</span><strong id="not-loaded-count">--</strong></article>
       <article class="metric"><span>检查异常</span><strong id="error-count">--</strong></article>
       <article class="metric"><span>搜索 QPS</span><strong id="search-qps">--</strong></article>
       <article class="metric"><span>查询 QPS</span><strong id="query-qps">--</strong></article>
@@ -91,8 +91,8 @@
           </tbody>
         </table>
         <div id="empty-state" class="empty-state" hidden>
-          <strong>没有发现集合</strong>
-          <span>当前扫描范围内没有可展示的集合。</span>
+          <strong id="empty-state-title">没有发现集合</strong>
+          <span id="empty-state-detail">当前扫描范围内没有可展示的集合。</span>
         </div>
       </div>
       <div id="collection-pagination" class="collection-pagination" hidden>

@@ -57,6 +57,11 @@ func (f *fakeAlertNotifier) Notify(_ context.Context, notification alert.Notific
 	return f.err
 }
 
+func (f *fakeAlertNotifier) NotifyBatch(_ context.Context, notifications []alert.Notification) error {
+	f.notifications = append(f.notifications, notifications...)
+	return f.err
+}
+
 func TestRunAlertTestSendsTestNotification(t *testing.T) {
 	notifier := &fakeAlertNotifier{}
 	cfg := config.Default()

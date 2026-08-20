@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -20,6 +21,14 @@ func NewFeishuNotifier(webhook string, timeout time.Duration) *FeishuNotifier {
 }
 
 func (f *FeishuNotifier) Notify(ctx context.Context, notification Notification) error {
+	return f.NotifyBatch(ctx, []Notification{notification})
+}
+
+func (f *FeishuNotifier) NotifyBatch(ctx context.Context, notifications []Notification) error {
+	if len(notifications) == 0 {
+		return nil
+	}
+	notification := notifications[0]
 	title := "Milvus 集合持续加载告警"
 	template := "orange"
 	if notification.Test {
@@ -34,7 +43,7 @@ func (f *FeishuNotifier) Notify(ctx context.Context, notification Notification) 
 				"title":    map[string]string{"tag": "plain_text", "content": title},
 			},
 			"elements": []any{
-				map[string]any{"tag": "div", "text": map[string]string{"tag": "lark_md", "content": notificationContent(notification)}},
+				map[string]any{"tag": "div", "text": map[string]string{"tag": "lark_md", "content": notificationContent(notifications)}},
 			},
 		},
 	}
@@ -77,19 +86,23 @@ func (f *FeishuNotifier) Notify(ctx context.Context, notification Notification) 
 	return nil
 }
 
-func notificationContent(notification Notification) string {
+func notificationContent(notifications []Notification) string {
+	notification := notifications[0]
 	if notification.Test {
 		return fmt.Sprintf("**状态：** 飞书 Webhook 配置与网络连接正常\n**Milvus 地址：** %s\n**测试时间：** %s", notification.MilvusAddress, notification.CheckedAt.Format("2006-01-02 15:04:05"))
 	}
-	alertType := "首次告警"
-	if notification.Repeated {
-		alertType = "重复告警"
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "**Milvus 地址：** %s\n**持续加载集合：** %d 个\n\n", notification.MilvusAddress, len(notifications))
+	for index, item := range notifications {
+		alertType := "首次告警"
+		if item.Repeated {
+			alertType = "重复告警"
+		}
+		fmt.Fprintf(&builder, "**%d. %s / %s**\n进度：%d%%，持续：%s，类型：%s\n首次观察：%s\n检查时间：%s\n\n",
+			index+1, item.Database, item.Collection, item.Progress, formatDuration(item.Duration), alertType,
+			item.LoadingSince.Format("2006-01-02 15:04:05"), item.CheckedAt.Format("2006-01-02 15:04:05"))
 	}
-	return fmt.Sprintf(
-		"**告警类型：** %s\n**Milvus 地址：** %s\n**数据库：** %s\n**集合：** %s\n**加载进度：** %d%%\n**持续时间：** %s\n**首次观察：** %s\n**检查时间：** %s",
-		alertType, notification.MilvusAddress, notification.Database, notification.Collection, notification.Progress,
-		formatDuration(notification.Duration), notification.LoadingSince.Format("2006-01-02 15:04:05"), notification.CheckedAt.Format("2006-01-02 15:04:05"),
-	)
+	return builder.String()
 }
 
 func formatDuration(duration time.Duration) string {

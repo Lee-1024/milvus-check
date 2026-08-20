@@ -34,6 +34,26 @@ func TestFeishuNotifierSendsInteractiveCard(t *testing.T) {
 	require.Contains(t, string(encoded), "42%")
 }
 
+func TestFeishuNotifierSendsMultipleNotificationsInOneCard(t *testing.T) {
+	var payload map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		require.NoError(t, json.NewDecoder(request.Body).Decode(&payload))
+		writer.Header().Set("Content-Type", "application/json")
+		_, _ = writer.Write([]byte(`{"code":0}`))
+	}))
+	defer server.Close()
+
+	err := NewFeishuNotifier(server.URL, time.Second).NotifyBatch(context.Background(), []Notification{
+		{Database: "db1", Collection: "a", Progress: 10},
+		{Database: "db2", Collection: "b", Progress: 20},
+	})
+	require.NoError(t, err)
+	encoded, err := json.Marshal(payload)
+	require.NoError(t, err)
+	require.Contains(t, string(encoded), "db1")
+	require.Contains(t, string(encoded), "db2")
+}
+
 func TestFeishuNotifierRejectsHTTPAndBusinessErrors(t *testing.T) {
 	tests := []struct {
 		name   string

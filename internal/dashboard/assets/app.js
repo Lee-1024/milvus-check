@@ -12,6 +12,8 @@
     staleBanner: document.getElementById("stale-banner"),
     body: document.getElementById("collection-body"),
     empty: document.getElementById("empty-state"),
+    emptyTitle: document.getElementById("empty-state-title"),
+    emptyDetail: document.getElementById("empty-state-detail"),
     resultCount: document.getElementById("result-count"),
     pagination: document.getElementById("collection-pagination"),
     pageInfo: document.getElementById("collection-page-info"),
@@ -30,6 +32,7 @@
   let allCollections = [];
   let currentPage = 1;
   let pageSize = 20;
+  const activeFilters = new Set();
 
   const metricIDs = ["database-count", "collection-count", "loaded-count", "loading-count", "not-loaded-count", "error-count", "search-qps", "query-qps", "failed-ps"];
 
@@ -105,7 +108,8 @@
   }
 
   function renderCollectionPage() {
-    const total = allCollections.length;
+    const filteredCollections = activeFilters.size === 0 ? allCollections : allCollections.filter((item) => activeFilters.has(item.load_state));
+    const total = filteredCollections.length;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     currentPage = Math.max(1, Math.min(currentPage, totalPages));
     const startIndex = (currentPage - 1) * pageSize;
@@ -114,7 +118,14 @@
     elements.resultCount.textContent = `${total} 条`;
     elements.empty.hidden = total !== 0;
     elements.pagination.hidden = total === 0;
-    renderRows(allCollections.slice(startIndex, endIndex));
+    renderRows(filteredCollections.slice(startIndex, endIndex));
+    if (total === 0 && allCollections.length > 0) {
+      elements.emptyTitle.textContent = "没有匹配的集合";
+      elements.emptyDetail.textContent = "当前筛选条件下没有可展示的集合。";
+    } else {
+      elements.emptyTitle.textContent = "没有发现集合";
+      elements.emptyDetail.textContent = "当前扫描范围内没有可展示的集合。";
+    }
     if (total === 0) return;
 
     elements.pageInfo.textContent = `第 ${startIndex + 1}-${endIndex} 条，共 ${total} 条`;
@@ -212,6 +223,20 @@
   }
 
   elements.refreshButton.addEventListener("click", refresh);
+  document.querySelectorAll("[data-filter-state]").forEach((card) => {
+    const toggle = () => {
+      const state = card.dataset.filterState;
+      if (activeFilters.has(state)) activeFilters.delete(state); else activeFilters.add(state);
+      card.classList.toggle("is-active", activeFilters.has(state));
+      card.setAttribute("aria-pressed", String(activeFilters.has(state)));
+      currentPage = 1;
+      renderCollectionPage();
+    };
+    card.addEventListener("click", toggle);
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); }
+    });
+  });
   elements.pageSize.addEventListener("change", () => {
     pageSize = Number(elements.pageSize.value) || 20;
     currentPage = 1;
